@@ -1,5 +1,5 @@
 [package]
-name = "leonardo/create-roblox-game"
+name = "leonardo/survivor-horror-game-rbx"
 version = "0.1.0"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"

@@ -3,7 +3,7 @@
 registry = "test"
 
 [[package]]
-name = "leonardo/create-roblox-game"
+name = "leonardo/survivor-horror-game-rbx"
 version = "0.1.0"
 dependencies = [["signal", "sleitnick/signal@2.0.3"]]
 
