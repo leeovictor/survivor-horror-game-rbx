@@ -3,9 +3,14 @@
 registry = "test"
 
 [[package]]
+name = "evaera/promise"
+version = "4.0.0"
+dependencies = []
+
+[[package]]
 name = "leonardo/survivor-horror-game-rbx"
 version = "0.1.0"
-dependencies = [["signal", "sleitnick/signal@2.0.3"]]
+dependencies = [["promise", "evaera/promise@4.0.0"], ["signal", "sleitnick/signal@2.0.3"]]
 
 [[package]]
 name = "sleitnick/signal"
