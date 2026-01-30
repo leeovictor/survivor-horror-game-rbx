@@ -2,10 +2,9 @@ local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ContextActionService = game:GetService("ContextActionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
 
+local MovementSystem = require(script.MovementSystem)
 local Promise = require(ReplicatedStorage.Packages.promise)
 -- local Gizmos = require(ReplicatedStorage.Shared.Gizmos)
 
@@ -64,96 +63,6 @@ for _, part: Part in ipairs(CollectionService:GetTagged("CameraSpots")) do
 	part.Transparency = 1
 end
 
-local humanoid: Humanoid = nil
-local dir = Vector3.zero
-
-local angle = 0
-
-local function setupCharacter(character: Model)
-	humanoid = character:WaitForChild("Humanoid") :: Humanoid
-	if humanoid == nil then
-		error("humanoid not found")
-	end
-	humanoid.AutoRotate = false
-
-	local function handleMovementAction(_actionName, inputState: Enum.UserInputState, inputObj: InputObject)
-		if inputState == Enum.UserInputState.Begin then
-			if inputObj.KeyCode == Enum.KeyCode.W then
-				dir += Vector3.new(0, 0, -1)
-			end
-			if inputObj.KeyCode == Enum.KeyCode.S then
-				dir += Vector3.new(0, 0, 1)
-			end
-		elseif inputState == Enum.UserInputState.End then
-			if inputObj.KeyCode == Enum.KeyCode.W then
-				dir -= Vector3.new(0, 0, -1)
-			end
-			if inputObj.KeyCode == Enum.KeyCode.S then
-				dir -= Vector3.new(0, 0, 1)
-			end
-		end
-	end
-
-	ContextActionService:BindAction(
-		"custom-char-movement",
-		handleMovementAction,
-		false,
-		Enum.KeyCode.W,
-		Enum.KeyCode.A,
-		Enum.KeyCode.S,
-		Enum.KeyCode.D
-	)
-end
-
-local rotSpeed = 1
-local movementEnabled = true
-
-RunService.Heartbeat:Connect(function()
-	if humanoid ~= nil then
-		local character = Players.LocalPlayer.Character
-		local rotationDir = 0
-		local running = false
-
-		if not movementEnabled then
-			humanoid.WalkSpeed = 0
-			return
-		end
-
-		if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-			rotationDir += 1
-		end
-		if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-			rotationDir -= 1
-		end
-		if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
-			running = true
-		end
-
-		angle += rotationDir * rotSpeed
-		angle %= 360
-
-		-- andar para trás mais devagar
-		humanoid.WalkSpeed = dir == Vector3.zAxis and 6 or 8
-		if humanoid.WalkSpeed == 8 and running then
-			humanoid.WalkSpeed = 16
-		end
-
-		local charCf = character:GetPivot()
-		local newCharCf = CFrame.new(charCf.Position) * CFrame.Angles(0, math.rad(angle), 0)
-
-		character:PivotTo(newCharCf)
-		humanoid:Move(newCharCf:VectorToWorldSpace(dir), false)
-	end
-end)
-
-if Players.LocalPlayer.Character ~= nil then
-	setupCharacter(Players.LocalPlayer.Character)
-end
-
-Players.LocalPlayer.CharacterAdded:Connect(function(character: Model)
-	setupCharacter(character)
-end)
-
 local screenGui = Players.LocalPlayer.PlayerGui:WaitForChild("BottomMessageScreen")
 local BlackScreen = Players.LocalPlayer.PlayerGui:WaitForChild("BlackScreen")
 
@@ -168,7 +77,7 @@ export type TextInput = string | { string | TaggedText }
 
 local function showTypedText(text: TextInput, textLabel: TextLabel)
 	return Promise.new(function(resolve)
-		movementEnabled = false
+		MovementSystem.setEnabled(false)
 
 		local function typeRawText(t: string)
 			local letters = string.split(t, "")
@@ -251,7 +160,7 @@ local function showTypedText(text: TextInput, textLabel: TextLabel)
 					textLabel.Text = buildRawText(text)
 				else
 					textLabel.Text = ""
-					movementEnabled = true
+					MovementSystem.setEnabled(true)
 					ContextActionService:UnbindAction("interaction:wait")
 					resolve()
 				end
@@ -301,7 +210,7 @@ local function doorTravelSequence(doorPart: Part)
 
 	-- door teleport sequence
 	local fadeSpeed = 0.2
-	movementEnabled = false
+	MovementSystem.setEnabled(false)
 	local frame: Frame = BlackScreen.Frame
 	frame.Visible = true
 	frame.BackgroundTransparency = 1
@@ -339,13 +248,17 @@ local function doorTravelSequence(doorPart: Part)
 		end
 
 		-- Adjust Y position to place player on floor using HipHeight
+		local humanoid: Humanoid = character:FindFirstChild("Humanoid")
+
 		local hipHeight = humanoid.HipHeight
 		local floorY = doorPart.Position.Y - (doorPart.Size.Y / 2)
 		targetCFrame = CFrame.new(targetCFrame.Position.X, floorY + hipHeight, targetCFrame.Position.Z)
 			* CFrame.Angles(0, select(2, targetCFrame:ToEulerAnglesYXZ()), 0)
 
 		-- Update angle variable to match new rotation
-		angle = math.deg(select(2, targetCFrame:ToEulerAnglesYXZ()))
+
+		local angle = math.deg(select(2, targetCFrame:ToEulerAnglesYXZ()))
+		MovementSystem.setAngle(angle)
 
 		-- Teleport character
 		character:PivotTo(targetCFrame)
@@ -356,7 +269,7 @@ local function doorTravelSequence(doorPart: Part)
 	fadeIn:Play()
 	fadeIn.Completed:Wait()
 
-	movementEnabled = true
+	MovementSystem.setEnabled(true)
 
 	ContextActionService:UnbindAction("interaction:wait")
 end
@@ -441,3 +354,5 @@ local function handleInteration(_action: string, inputState: Enum.UserInputState
 end
 
 ContextActionService:BindAction("interaction", handleInteration, false, Enum.UserInputType.MouseButton1)
+
+MovementSystem.initialize()
