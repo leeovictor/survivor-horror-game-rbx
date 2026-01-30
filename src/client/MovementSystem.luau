@@ -44,7 +44,7 @@ local function setupCharacter(character: Model)
 	)
 end
 
-function MovementSystem.initialize()
+function MovementSystem.setup()
 	if Players.LocalPlayer.Character ~= nil then
 		setupCharacter(Players.LocalPlayer.Character)
 	end

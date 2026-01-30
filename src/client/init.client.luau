@@ -1,67 +1,15 @@
-local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ContextActionService = game:GetService("ContextActionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
+local FixedCameraSystem = require(script.FixedCameraSystem)
 local MovementSystem = require(script.MovementSystem)
 local Promise = require(ReplicatedStorage.Packages.promise)
 -- local Gizmos = require(ReplicatedStorage.Shared.Gizmos)
 
-local function changeCamera(box: Part)
-	print("Current Box: ", box.Name)
-
-	local cameraName = box:GetAttribute("camera")
-	if cameraName == nil then
-		return
-	end
-
-	local cameraPart: Part = workspace:FindFirstChild(cameraName)
-	if cameraPart == nil then
-		return
-	end
-
-	local camera = workspace.CurrentCamera
-
-	if camera.CameraType ~= Enum.CameraType.Scriptable then
-		camera.CameraType = Enum.CameraType.Scriptable
-	end
-
-	camera.CFrame = cameraPart.CFrame
-end
-
-local function setupBoundingBox(box: Part)
-	box.Transparency = 1
-	box.Touched:Connect(function(part: BasePart)
-		if part.Name == "HumanoidRootPart" then
-			local char = part.Parent
-			if char ~= nil and char:IsA("Model") then
-				local player = Players:GetPlayerFromCharacter(char)
-
-				if player == nil or player ~= Players.LocalPlayer then
-					return
-				end
-			end
-			changeCamera(box)
-		end
-	end)
-end
-
-CollectionService:GetInstanceAddedSignal("CameraBoudingBoxes"):Connect(function(part: Part)
-	setupBoundingBox(part)
-end)
-
-for _, box: Part in ipairs(CollectionService:GetTagged("CameraBoudingBoxes")) do
-	setupBoundingBox(box)
-end
-
-CollectionService:GetInstanceAddedSignal("CameraSpots"):Connect(function(part: Part)
-	part.Transparency = 1
-end)
-
-for _, part: Part in ipairs(CollectionService:GetTagged("CameraSpots")) do
-	part.Transparency = 1
-end
+MovementSystem.setup()
+FixedCameraSystem.setup()
 
 local screenGui = Players.LocalPlayer.PlayerGui:WaitForChild("BottomMessageScreen")
 local BlackScreen = Players.LocalPlayer.PlayerGui:WaitForChild("BlackScreen")
@@ -116,7 +64,6 @@ local function showTypedText(text: TextInput, textLabel: TextLabel)
 					for _, letter in ipairs(letters) do
 						contentAcc ..= letter
 						textLabel.Text = textLabelBeforeTag .. tagOpen .. contentAcc .. tagClose
-
 						task.wait(textSpeed)
 					end
 
@@ -354,5 +301,3 @@ local function handleInteration(_action: string, inputState: Enum.UserInputState
 end
 
 ContextActionService:BindAction("interaction", handleInteration, false, Enum.UserInputType.MouseButton1)
-
-MovementSystem.initialize()
