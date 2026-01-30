@@ -172,42 +172,27 @@ local function doorTravelSequence(doorPart: Part)
 	local hmr: Part = character and character:FindFirstChild("HumanoidRootPart")
 
 	if hmr and doorPart then
-		-- Get door's forward direction
+		-- verifica em que lado da porta o player está
 		local doorCFrame = doorPart.CFrame
 		local doorForward = doorCFrame.LookVector
-
-		-- Get vector from door to player
 		local doorToPlayer = (hmr.Position - doorPart.Position).Unit
-
-		-- Determine if player is in front or back using dot product
-		local dotProduct = doorForward:Dot(doorToPlayer)
-
-		-- Get teleport destination
-		local teleportOffset = 2 -- distance from door
+		local teleportOffset = 2
 		local targetCFrame
 
-		if dotProduct > 0 then
-			-- Player is in front, teleport to back (facing away from door)
+		if doorForward:Dot(doorToPlayer) > 0 then
 			targetCFrame = doorCFrame * CFrame.new(0, 0, teleportOffset) * CFrame.Angles(0, math.pi, 0)
 		else
-			-- Player is in back, teleport to front (facing away from door)
 			targetCFrame = doorCFrame * CFrame.new(0, 0, -teleportOffset) * CFrame.Angles(0, 0, 0)
 		end
 
-		-- Adjust Y position to place player on floor using HipHeight
+		-- move o char para o outro lado da porta e ajusta seu angulo para olhar para frente
 		local humanoid: Humanoid = character:FindFirstChild("Humanoid")
-
 		local hipHeight = humanoid.HipHeight
 		local floorY = doorPart.Position.Y - (doorPart.Size.Y / 2)
 		targetCFrame = CFrame.new(targetCFrame.Position.X, floorY + hipHeight, targetCFrame.Position.Z)
 			* CFrame.Angles(0, select(2, targetCFrame:ToEulerAnglesYXZ()), 0)
 
-		-- Update angle variable to match new rotation
-
-		local angle = math.deg(select(2, targetCFrame:ToEulerAnglesYXZ()))
-		MovementSystem.setAngle(angle)
-
-		-- Teleport character
+		MovementSystem.setAngle(math.deg(select(2, targetCFrame:ToEulerAnglesYXZ())))
 		character:PivotTo(targetCFrame)
 	end
 
