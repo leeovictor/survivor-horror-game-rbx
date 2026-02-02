@@ -4,14 +4,10 @@ local Players = game:GetService("Players")
 local FixedCameraSystem = {}
 
 local function changeCamera(box: Part)
-	local cameraName = box:GetAttribute("camera")
-	if cameraName == nil then
-		error("Camera bounding box is missing 'camera' attribute")
-	end
-
-	local cameraPart: Part = workspace:FindFirstChild(cameraName)
-	if cameraPart == nil then
-		error("Camera part '" .. cameraName .. "' not found in workspace")
+	local cameraPart = box:FindFirstChild("Camera")
+	if not cameraPart or not cameraPart:IsA("BasePart") then
+		error("FixedCameraSystem: No valid camera part found for box:" .. box.Name)
+		return
 	end
 
 	local camera = workspace.CurrentCamera
@@ -41,15 +37,15 @@ local function setupBoundingBox(box: Part)
 	end
 
 	box.Transparency = 1
+	local camera = box:WaitForChild("Camera") :: Part
+	camera.Transparency = 1
+
 	touchedConnections[box] = box.Touched:Connect(onTouch)
 end
 
 function FixedCameraSystem.setup()
 	for _, box: Part in ipairs(CollectionService:GetTagged("CameraBoudingBoxes")) do
 		setupBoundingBox(box)
-	end
-	for _, part: Part in ipairs(CollectionService:GetTagged("CameraSpots")) do
-		part.Transparency = 1
 	end
 
 	CollectionService:GetInstanceAddedSignal("CameraBoudingBoxes"):Connect(function(part: Part)
@@ -62,9 +58,6 @@ function FixedCameraSystem.setup()
 			con:Disconnect()
 			touchedConnections[part] = nil
 		end
-	end)
-	CollectionService:GetInstanceAddedSignal("CameraSpots"):Connect(function(part: Part)
-		part.Transparency = 1
 	end)
 end
 
