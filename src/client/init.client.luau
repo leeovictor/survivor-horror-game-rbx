@@ -10,7 +10,6 @@ local InventoryManager = require(script.InventoryManager)
 local MovementSystem = require(script.MovementSystem)
 local InventoryController = require(script.ui.InventoryController)
 local Promise = require(ReplicatedStorage.Packages.promise)
-local Gizmos = require(ReplicatedStorage.Shared.Gizmos)
 -- local Gizmos = require(ReplicatedStorage.Shared.Gizmos)
 
 MovementSystem.setup()
@@ -22,8 +21,10 @@ ContextActionService:BindAction("inventory-open", function(_, inputState: Enum.U
 	if inputState == Enum.UserInputState.Begin then
 		if InventoryController.isOpen() then
 			InventoryController.close()
+			MovementSystem.setEnabled(true)
 		else
 			InventoryController.open()
+			MovementSystem.setEnabled(false)
 		end
 	end
 end, false, Enum.KeyCode.Tab)
@@ -156,7 +157,11 @@ local DoorsData = {
 				{ tag = "font", attributes = { color = "rgb(0,255,0)" }, content = "sword figure" } :: TaggedText,
 				" engraved on the lock.",
 			} :: TextInput,
-			unlocked = "Door unlocked.",
+			unlocked = {
+				"You used the ",
+				{ tag = "font", attributes = { color = "rgb(0,255,0)" }, content = "sword key" } :: TaggedText,
+				".",
+			},
 		},
 	},
 }

@@ -5,10 +5,30 @@ local InventoryManager = require(script.Parent.Parent.InventoryManager)
 local InventoryController = {}
 
 local screen: any
+
+-- TODO: mover isso para outro lugar?
 local originalBlurSize: number = Lighting.Blur.Size
+
+local slotsCon = {}
 
 function InventoryController.init()
 	screen = Players.LocalPlayer.PlayerGui:WaitForChild("InventoryScreen")
+
+	-- init slot list
+	local slotTemplate = screen.Items.ItemSlotTemplate :: Frame
+	for i = 1, InventoryManager.getMaxSize() do
+		local slot = slotTemplate:Clone()
+		slot.Name = "ItemSlot" .. tostring(i)
+		slot.Visible = true
+		slot.LayoutOrder = i
+		slot.Parent = screen.Items
+
+		slot.Icon.Visible = false
+		slot.ItemName.Visible = false
+		slot.StackSize.Visible = false
+
+		slotsCon[slot.Name] = nil
+	end
 end
 
 local function updateHealthState()
@@ -38,50 +58,97 @@ local function updateHealthState()
 	end
 end
 
-local function clearSlots()
-	local itemsFrame = screen.Items :: Frame
-	for _, slot in ipairs(itemsFrame:GetChildren()) do
-		if slot:IsA("Frame") and slot.Name ~= "ItemSlotTemplate" then
-			slot:Destroy()
-		end
-	end
-end
-
 local function renderItems()
-	clearSlots()
-
 	local items = InventoryManager.getItems()
 	local itemsFrame = screen.Items :: Frame
-	local itemSlotTemplate = itemsFrame.ItemSlotTemplate :: Frame
 
 	for index = 1, InventoryManager.getMaxSize() do
 		local item = items[index]
 
-		local itemSlot = itemSlotTemplate:Clone()
-		itemSlot.Name = "ItemSlot" .. tostring(index)
-		itemSlot.Visible = true
+		local itemSlot = itemsFrame:FindFirstChild("ItemSlot" .. tostring(index)) :: Frame
+		assert(itemSlot, "Slot not found. Check the slot initializtion")
 
-		local icon = itemSlot.Icon :: ImageLabel
+		local icon = itemSlot.Icon :: ImageButton
 		local itemName = itemSlot.ItemName :: TextLabel
 		local stackSize = itemSlot.StackSize :: TextLabel
 
-		if not item then
+		if item == nil then
 			icon.Visible = false
 			itemName.Visible = false
 			stackSize.Visible = false
-			itemSlot.Parent = itemsFrame
 			continue
+		else
+			icon.Visible = true
+			itemName.Visible = true
+			stackSize.Visible = true
 		end
 
-		icon.Image = ""
+		icon.Image = item.icon
 		itemName.Text = item.name
 
-		if item.stackable and item.stackSize and item.stackSize > 1 then
+		if item.stackable then
 			stackSize.Text = tostring(item.stackSize)
 			stackSize.Visible = true
 		else
 			stackSize.Visible = false
 		end
+
+		local function toogleItemActions()
+			local actionsFrame = screen.ItemActions :: Frame
+			if actionsFrame.Visible then
+				actionsFrame.Visible = false
+				return
+			end
+
+			actionsFrame.Visible = true
+
+			if item.type == InventoryManager.ItemsType.Usable or item.type == InventoryManager.ItemsType.Consumable then
+				local actions = { "Use", "Examine" }
+				local itemActionTemplate = actionsFrame.ActionItem :: TextButton
+
+				for _, child in ipairs(actionsFrame:GetChildren()) do
+					if child:IsA("TextButton") and child.Name ~= "ActionItem" then
+						child:Destroy()
+					end
+				end
+
+				for i, action in ipairs(actions) do
+					local actionItem = itemActionTemplate:Clone()
+					actionItem.Name = action
+					actionItem.Text = action
+					actionItem.Visible = true
+					actionItem.Parent = actionsFrame
+					actionItem.LayoutOrder = i
+				end
+
+				itemActionTemplate.Visible = false
+			elseif item.type == InventoryManager.ItemsType.Equippable then
+				local actions = { "Equip", "Examine" }
+				local itemActionTemplate = actionsFrame.ActionItem :: TextButton
+
+				for _, child in ipairs(actionsFrame:GetChildren()) do
+					if child:IsA("TextButton") and child.Name ~= "ActionItem" then
+						child:Destroy()
+					end
+				end
+
+				for i, action in ipairs(actions) do
+					local actionItem = itemActionTemplate:Clone()
+					actionItem.Name = action
+					actionItem.Text = action
+					actionItem.Visible = true
+					actionItem.Parent = actionsFrame
+					actionItem.LayoutOrder = i
+				end
+
+				itemActionTemplate.Visible = false
+			end
+		end
+
+		if slotsCon[itemSlot.Name] then
+			slotsCon[itemSlot.Name]:Disconnect()
+		end
+		slotsCon[itemSlot.Name] = icon.MouseButton1Click:Connect(toogleItemActions)
 
 		itemSlot.Parent = itemsFrame
 	end
@@ -101,6 +168,8 @@ function InventoryController.close()
 	local blur = Lighting.Blur :: BlurEffect
 	blur.Size = originalBlurSize
 	screen.Enabled = false
+	local actionsFrame = screen.ItemActions :: Frame
+	actionsFrame.Visible = false
 end
 
 function InventoryController.isOpen(): boolean

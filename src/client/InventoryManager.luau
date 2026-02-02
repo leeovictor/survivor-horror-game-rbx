@@ -2,6 +2,12 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local signal = require(ReplicatedStorage.Packages.signal)
 local InventoryManager = {}
 
+InventoryManager.ItemsType = {
+	Consumable = "Consumable" :: ItemType,
+	Equippable = "Equippable" :: ItemType,
+	Usable = "Usable" :: ItemType,
+}
+
 export type ItemType = "Consumable" | "Equippable" | "Usable"
 
 export type ItemBase = {

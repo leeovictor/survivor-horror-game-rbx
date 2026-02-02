@@ -1,7 +1,6 @@
 local ContextActionService = game:GetService("ContextActionService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local MovementSystem = {}
 
@@ -10,7 +9,7 @@ local runSpeed = 12
 local walkSpeed = 6
 local backwardSpeedMultiplier = 0.5
 local angle = 0
-local rotSpeed = 0.8
+local rotSpeed = 1
 local movementEnabled = true
 local movementActionName = "custom-char-movement"
 local updateCon
