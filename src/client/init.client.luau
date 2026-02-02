@@ -10,6 +10,7 @@ local InventoryManager = require(script.InventoryManager)
 local MovementSystem = require(script.MovementSystem)
 local InventoryController = require(script.ui.InventoryController)
 local Promise = require(ReplicatedStorage.Packages.promise)
+local ItemsData = require(ReplicatedStorage.Shared.ItemsData)
 -- local Gizmos = require(ReplicatedStorage.Shared.Gizmos)
 
 MovementSystem.setup()
@@ -260,7 +261,7 @@ local function itemPickupInteraction(itemPart: Part)
 			error("Item has no ItemName attribute")
 		end
 
-		local item: InventoryManager.UsableItem = {
+		local item: ItemsData.UsableItem = {
 			key = itemName,
 			name = itemName,
 			description = "An item called " .. itemName,
@@ -317,92 +318,82 @@ end
 ContextActionService:BindAction("interaction", handleInteration, false, Enum.KeyCode.F)
 
 -- TODO: refactor this to a separate module
-local backpack = Players.LocalPlayer.Backpack
-local character = Players.LocalPlayer.Character or Players.LocalPlayer.CharacterAdded:Wait()
-local handgun = backpack:WaitForChild("Handgun") :: Tool
+-- local backpack = Players.LocalPlayer.Backpack
+-- local character = Players.LocalPlayer.Character or Players.LocalPlayer.CharacterAdded:Wait()
+-- local handgun = backpack:WaitForChild("Handgun") :: Tool
 
-local enemyTag = "Enemy"
+-- local enemyTag = "Enemy"
 
-local function isOnSight(playerHrp: Part, enemyHrp: Part): boolean
-	local direction = (enemyHrp.Position - playerHrp.Position).Unit
-	local distance = (enemyHrp.Position - playerHrp.Position).Magnitude
-	local rayOrigin = playerHrp.Position
-	local rayDirection = direction * distance
+-- local function isOnSight(playerHrp: Part, enemyHrp: Part): boolean
+-- 	local direction = (enemyHrp.Position - playerHrp.Position).Unit
+-- 	local distance = (enemyHrp.Position - playerHrp.Position).Magnitude
+-- 	local rayOrigin = playerHrp.Position
+-- 	local rayDirection = direction * distance
 
-	local raycastParams = RaycastParams.new()
-	raycastParams.CollisionGroup = "EnemySightCheck"
+-- 	local raycastParams = RaycastParams.new()
+-- 	raycastParams.CollisionGroup = "EnemySightCheck"
 
-	local res = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+-- 	local res = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
 
-	if res ~= nil then
-		return false
-	end
+-- 	if res ~= nil then
+-- 		return false
+-- 	end
 
-	return true
-end
+-- 	return true
+-- end
 
-local function findClosestTarget(): Model?
-	local enemies = CollectionService:GetTagged(enemyTag)
+-- local function findClosestTarget(): Model?
+-- 	local enemies = CollectionService:GetTagged(enemyTag)
 
-	local closestEnemy: Model? = nil
-	local closestDistance = math.huge
-	local hrp = character:WaitForChild("HumanoidRootPart") :: Part
+-- 	local closestEnemy: Model? = nil
+-- 	local closestDistance = math.huge
+-- 	local hrp = character:WaitForChild("HumanoidRootPart") :: Part
 
-	for _, enemy: Model in ipairs(enemies) do
-		local enemyHrp = enemy:FindFirstChild("HumanoidRootPart") :: Part
-		if enemyHrp and isOnSight(hrp, enemyHrp) then
-			local distance = (enemyHrp.Position - hrp.Position).Magnitude
-			if distance < closestDistance then
-				closestDistance = distance
-				closestEnemy = enemy
-			end
-		end
-	end
+-- 	for _, enemy: Model in ipairs(enemies) do
+-- 		local enemyHrp = enemy:FindFirstChild("HumanoidRootPart") :: Part
+-- 		if enemyHrp and isOnSight(hrp, enemyHrp) then
+-- 			local distance = (enemyHrp.Position - hrp.Position).Magnitude
+-- 			if distance < closestDistance then
+-- 				closestDistance = distance
+-- 				closestEnemy = enemy
+-- 			end
+-- 		end
+-- 	end
 
-	return closestEnemy
-end
+-- 	return closestEnemy
+-- end
 
-handgun.Equipped:Connect(function()
-	ContextActionService:BindAction("aim", function(_action, inputState)
-		if inputState == Enum.UserInputState.Begin then
-			MovementSystem.setEnabled(false)
+-- handgun.Equipped:Connect(function()
+-- 	ContextActionService:BindAction("aim", function(_action, inputState)
+-- 		if inputState == Enum.UserInputState.Begin then
+-- 			MovementSystem.setEnabled(false)
 
-			-- 1. if a target is visible, turn the character to face the target
-			local target: Model? = findClosestTarget()
-			if target ~= nil then
-				local targetHrp = target:FindFirstChild("HumanoidRootPart") :: Part
-				local charHrp = character:FindFirstChild("HumanoidRootPart") :: Part
+-- 			-- 1. if a target is visible, turn the character to face the target
+-- 			local target: Model? = findClosestTarget()
+-- 			if target ~= nil then
+-- 				local targetHrp = target:FindFirstChild("HumanoidRootPart") :: Part
+-- 				local charHrp = character:FindFirstChild("HumanoidRootPart") :: Part
 
-				local direction = (targetHrp.Position - charHrp.Position).Unit
-				local targetAngle = math.deg(math.atan2(-direction.Z, direction.X)) - 90
-				MovementSystem.setAngle(targetAngle)
-			end
+-- 				local direction = (targetHrp.Position - charHrp.Position).Unit
+-- 				local targetAngle = math.deg(math.atan2(-direction.Z, direction.X)) - 90
+-- 				MovementSystem.setAngle(targetAngle)
+-- 			end
 
-			ContextActionService:BindAction("shoot", function(_action, inputState2)
-				if inputState2 == Enum.UserInputState.Begin then
-					print("shoot")
+-- 			ContextActionService:BindAction("shoot", function(_action, inputState2)
+-- 				if inputState2 == Enum.UserInputState.Begin then
+-- 					print("shoot")
 
-					-- 1. validate if there is ammo available to shoot with this weapon
-					-- 1. calculate if the target can be hit
-					-- 	a. verify the angle between the character lookVector and the direction to the target
-					-- 	b. verify if there's no obstacle between the character and the target (raycast)
-					-- 2. if hit, apply damage to the target
-					-- 3. decrease ammo count
-				end
-			end, false, Enum.UserInputType.MouseButton1)
-		elseif inputState == Enum.UserInputState.End then
-			MovementSystem.setEnabled(true)
-			ContextActionService:UnbindAction("shoot")
-		end
-	end, false, Enum.UserInputType.MouseButton2)
-end)
-handgun.Unequipped:Connect(function()
-	MovementSystem.setEnabled(true)
-	ContextActionService:UnbindAction("aim")
-	ContextActionService:UnbindAction("shoot")
-end)
-
-local humanoid = character:WaitForChild("Humanoid") :: Humanoid
-humanoid:EquipTool(backpack:WaitForChild("Handgun"))
-
--- TODO: zombie spawning and AI
+-- 					-- 1. validate if there is ammo available to shoot with this weapon
+-- 					-- 1. calculate if the target can be hit
+-- 					-- 	a. verify the angle between the character lookVector and the direction to the target
+-- 					-- 	b. verify if there's no obstacle between the character and the target (raycast)
+-- 					-- 2. if hit, apply damage to the target
+-- 					-- 3. decrease ammo count
+-- 				end
+-- 			end, false, Enum.UserInputType.MouseButton1)
+-- 		elseif inputState == Enum.UserInputState.End then
+-- 			MovementSystem.setEnabled(true)
+-- 			ContextActionService:UnbindAction("shoot")
+-- 		end
+-- 	end, false, Enum.UserInputType.MouseButton2)
+-- end)

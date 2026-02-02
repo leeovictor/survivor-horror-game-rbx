@@ -1,5 +1,7 @@
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ItemsData = require(ReplicatedStorage.Shared.ItemsData)
 local InventoryManager = require(script.Parent.Parent.InventoryManager)
 
 local InventoryController = {}
@@ -102,7 +104,7 @@ local function renderItems()
 
 			actionsFrame.Visible = true
 
-			if item.type == InventoryManager.ItemsType.Usable or item.type == InventoryManager.ItemsType.Consumable then
+			if item.type == ItemsData.ItemsType.Usable or item.type == ItemsData.ItemsType.Consumable then
 				local actions = { "Use", "Examine" }
 				local itemActionTemplate = actionsFrame.ActionItem :: TextButton
 
@@ -122,7 +124,7 @@ local function renderItems()
 				end
 
 				itemActionTemplate.Visible = false
-			elseif item.type == InventoryManager.ItemsType.Equippable then
+			elseif item.type == ItemsData.ItemsType.Equippable then
 				local actions = { "Equip", "Examine" }
 				local itemActionTemplate = actionsFrame.ActionItem :: TextButton
 
@@ -139,6 +141,13 @@ local function renderItems()
 					actionItem.Visible = true
 					actionItem.Parent = actionsFrame
 					actionItem.LayoutOrder = i
+
+					if action == "Equip" then
+						actionItem.MouseButton1Click:Connect(function()
+							InventoryManager.equipItem(item :: ItemsData.EquippableItem)
+							actionsFrame.Visible = false
+						end)
+					end
 				end
 
 				itemActionTemplate.Visible = false
